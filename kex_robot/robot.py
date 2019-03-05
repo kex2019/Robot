@@ -75,7 +75,7 @@ class Robot():
         if not self.target:
             return None
 
-        if self.robot.position == self.target:
+        if list(self.robot.position) == list(self.target):
             return None
 
         direction = [
@@ -169,10 +169,9 @@ class Robot():
 
         free = self.get_free(on_map)
         #   Has instruction       Walking to idle position and there is nothing to do
-        if self.target and not (self.state == Robot.NOTHING
-                                and len(free) == 0):
+        if self.target != None:
             movement = self.move()
-            if movement:
+            if movement != None:
                 return movement
         """ If we can pickup a package, pick it up (Robots might steal eachothers packages)"""
         if self.pickup_condition(on_map):
@@ -189,22 +188,21 @@ class Robot():
 
             self.target = self.walkable_near(
                 self.closest_dropoff(self.robot.position, self.robot.packages))
-            if self.target:
-                return self.move()
+            return self.move()
         """ Get free packages """
         if free:
             go_pickup = self.should_pickup(free)
             if go_pickup:
                 self.state = Robot.WALKING
                 self.target = self.walkable_near(go_pickup.start)
-                if self.target:
-                    return self.move()
+                self.reservations.add(go_pickup)
+                return self.move()
         """ If there is still nothing to do, we are idle!"""
         self.state = Robot.NOTHING
         self.target = self.walkable_near(idle_task(self))
 
         movement = self.move()
-        if movement:
+        if movement != None:
             return movement
 
         return self.gym.PICKUP_INSTRUCTION
