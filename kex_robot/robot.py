@@ -42,7 +42,7 @@ class Robot():
 
     def can_pickup(self, position, packages):
         for p in packages:
-            if l1norm_dist(position, p.start) == 1:
+            if l1norm_dist(position, p.start) == 1 and p in self.robot.reservations:
                 return True
         return False
 
@@ -133,7 +133,7 @@ class Robot():
                 return self.prev_movement
 
         print("This will never be called.. probably bad design")
-        return 5
+        raise Exception("Error occured")
 
     def dropoff_condition(self, free):
         return len(self.robot.packages) == self.capacity or\
@@ -168,7 +168,7 @@ class Robot():
                  idle_task: "F: self -> []" = lambda _: [0, 0]):
 
         free = self.get_free(on_map)
-        #   Has instruction       Walking to idle position and there is nothing to do
+
         if self.target != None:
             movement = self.move()
             if movement != None:
@@ -188,6 +188,11 @@ class Robot():
 
             self.target = self.walkable_near(
                 self.closest_dropoff(self.robot.position, self.robot.packages))
+            movement = self.move()
+            if movement != None:
+                return movement
+            else:
+                return self.gym.DROP_INSTRUCTION
             return self.move()
         """ Get free packages """
         if free:
@@ -196,7 +201,21 @@ class Robot():
                 self.state = Robot.WALKING
                 self.target = self.walkable_near(go_pickup.start)
                 self.reservations.add(go_pickup)
-                return self.move()
+                self.robot.reservations.add(go_pickup)
+                movement = self.move()
+                if movement != None:
+                    return movement
+                else:
+                    return self.gym.PICKUP_INSTRUCTION
+        """ 
+        For some reasons robots forget to go for their reservations.. 
+        this is a bug and this if here is a ugly fix. 
+        """
+        if len(self.robot.reservations) != 0:
+            self.state = Robot.WALKING
+            self.target = self.walkable_near(
+                tuple(self.robot.reservations)[0].start)
+            self.move()
         """ If there is still nothing to do, we are idle!"""
         self.state = Robot.NOTHING
         self.target = self.walkable_near(idle_task(self))
