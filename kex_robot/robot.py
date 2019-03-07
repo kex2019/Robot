@@ -27,6 +27,8 @@ class Robot():
         self.target = None
         self.prev_movement = None
 
+        self.fitness = 0
+
     def walkable(self, p: []) -> bool:
         return self.gym.in_map(
             p[0], p[1]) and self.gym.map[p[0]][p[1]][0] == self.gym.TILE_ID
@@ -42,7 +44,8 @@ class Robot():
 
     def can_pickup(self, position, packages):
         for p in packages:
-            if l1norm_dist(position, p.start) == 1 and p in self.robot.reservations:
+            if l1norm_dist(position,
+                           p.start) == 1 and p in self.robot.reservations:
                 return True
         return False
 
@@ -132,8 +135,10 @@ class Robot():
                 [self.robot.position[0] + y, self.robot.position[1] + x]):
                 return self.prev_movement
 
-        print("This will never be called.. probably bad design")
-        raise Exception("Error occured")
+        print(
+            "This will never be called.. probably bad design.. if you see this.. i am sorry"
+        )
+        return None
 
     def dropoff_condition(self, free):
         return len(self.robot.packages) == self.capacity or\
@@ -177,6 +182,7 @@ class Robot():
         if self.pickup_condition(on_map):
             self.state = Robot.NOTHING
             self.prev_movement = None
+            self.fitness += 1
             return self.gym.PICKUP_INSTRUCTION
         """ If we can drop a package we drop it and then move to drop next packages"""
         if self.dropoff_condition(free):
@@ -206,6 +212,7 @@ class Robot():
                 if movement != None:
                     return movement
                 else:
+                    self.fitness += 1
                     return self.gym.PICKUP_INSTRUCTION
         """ 
         For some reasons robots forget to go for their reservations.. 
