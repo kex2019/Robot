@@ -10,6 +10,7 @@ class Robot():
     NOTHING = 0
     WALKING = 1
     DROPPING = 2
+    WAITING = 3
 
     def __init__(self, robot: "RoboticWareHouseRobot", gym: "RoboticWareHouse",
                  capacity: int, reservations: set, swarm: "[Robot]"):
@@ -135,9 +136,9 @@ class Robot():
                 [self.robot.position[0] + y, self.robot.position[1] + x]):
                 return self.prev_movement
 
-        print(
-            "This will never be called.. probably bad design.. if you see this.. i am sorry"
-        )
+        # print(
+        # "This will never be called.. probably bad design.. if you see this.. i am sorry"
+        # )
         return None
 
     def dropoff_condition(self, free):
@@ -157,10 +158,10 @@ class Robot():
         for dist, p in package_ranking:
             should = True
             for r in self.swarm:
-                if r.state != Robot.NOTHING:
+                if r.state == Robot.WALKING or r.state == Robot.DROPPING:
                     continue
 
-                if l1norm_dist(r.robot.position, p.start) + 1 < dist:
+                if l1norm_dist(r.robot.position, p.start) < dist:
                     should = False
                     break
 
@@ -224,6 +225,9 @@ class Robot():
                 tuple(self.robot.reservations)[0].start)
             self.move()
         """ If there is still nothing to do, we are idle!"""
+        if self.state == Robot.WAITING:
+            return self.gym.DROP_INSTRUCTION
+
         self.state = Robot.NOTHING
         self.target = self.walkable_near(idle_task(self))
 
@@ -231,4 +235,4 @@ class Robot():
         if movement != None:
             return movement
 
-        return self.gym.PICKUP_INSTRUCTION
+        return self.gym.DROP_INSTRUCTION
